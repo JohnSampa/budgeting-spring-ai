@@ -4,7 +4,9 @@ import br.com.jonathan.budgeting.application.input.PersistTransactionInput;
 import br.com.jonathan.budgeting.application.output.TransactionOutput;
 import br.com.jonathan.budgeting.domain.Transaction;
 import br.com.jonathan.budgeting.domain.TransactionRepository;
+import org.springframework.stereotype.Service;
 
+@Service
 public class PersistTransactionUseCase {
 
     private final TransactionRepository transactionRepository;
