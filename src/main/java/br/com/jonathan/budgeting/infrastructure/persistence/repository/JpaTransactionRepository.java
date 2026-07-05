@@ -4,9 +4,11 @@ import br.com.jonathan.budgeting.domain.Category;
 import br.com.jonathan.budgeting.domain.Transaction;
 import br.com.jonathan.budgeting.domain.TransactionRepository;
 import br.com.jonathan.budgeting.infrastructure.persistence.entity.TransactionEntity;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class JpaTransactionRepository implements TransactionRepository {
 
     private final TransactionEntityRepository transactionEntityRepository;
@@ -26,6 +28,9 @@ public class JpaTransactionRepository implements TransactionRepository {
 
     @Override
     public List<Transaction> findAllByCategory(Category category) {
-        return List.of();
+        return transactionEntityRepository.findAllByCategory(category)
+                .stream()
+                .map(TransactionEntity::toDomain)
+                .toList();
     }
 }
