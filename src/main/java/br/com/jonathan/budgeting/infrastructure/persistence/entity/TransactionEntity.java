@@ -1,12 +1,15 @@
 package br.com.jonathan.budgeting.infrastructure.persistence.entity;
 
 import br.com.jonathan.budgeting.domain.Category;
+import br.com.jonathan.budgeting.domain.Transaction;
+import br.com.jonathan.budgeting.domain.TransactionId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +17,7 @@ import java.util.UUID;
 
 @Entity
 @Data
+@AllArgsConstructor
 @NoArgsConstructor
 public class TransactionEntity {
 
@@ -28,4 +32,21 @@ public class TransactionEntity {
     @Enumerated(EnumType.STRING)
     private Category category;
 
+    public static TransactionEntity from(Transaction transaction) {
+        return new TransactionEntity(
+                transaction.getId().uuid(),
+                transaction.getDescription(),
+                transaction.getAmount(),
+                transaction.getCategory()
+        );
+    }
+
+    public Transaction toDomain() {
+        return new Transaction(
+                new TransactionId(this.id),
+                this.description,
+                this.amount,
+                this.category
+        );
+    }
 }
