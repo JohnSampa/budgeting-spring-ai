@@ -7,9 +7,13 @@ import br.com.jonathan.budgeting.domain.Category;
 import br.com.jonathan.budgeting.infrastructure.http.request.TransactionRequest;
 import br.com.jonathan.budgeting.infrastructure.http.response.TransactionResponse;
 import org.springframework.ai.audio.transcription.TranscriptionModel;
+import org.springframework.ai.audio.tts.TextToSpeechModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +41,8 @@ public class TransactionController {
 
     private final TranscriptionModel transcriptionModel;
 
+    private final TextToSpeechModel textToSpeechModel;
+
     private final ChatClient chatClient;
 
     public TransactionController(
@@ -47,6 +53,8 @@ public class TransactionController {
 
             TranscriptionModel transcriptionModel,
 
+            TextToSpeechModel textToSpeechModel,
+
             @Value("classpath:/prompts/system-message.st")
             Resource systemPrompt,
 
@@ -56,6 +64,7 @@ public class TransactionController {
         this.persistTransactionUseCase = persistTransactionUseCase;
         this.listTransactionByCategoryUseCase = listTransactionByCategoryUseCase;
         this.transcriptionModel = transcriptionModel;
+        this.textToSpeechModel = textToSpeechModel;
         this.chatClient = builder
                 .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
                 .defaultTools(
@@ -89,8 +98,10 @@ public class TransactionController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/ai",consumes = MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> transcription(
+    @PostMapping(value = "/ai",
+                consumes = MULTIPART_FORM_DATA_VALUE,
+                produces = "audio/mp3")
+    public ResponseEntity<Resource> transcription(
             @RequestParam("file") MultipartFile file
     ) {
         Resource resource = file.getResource();
@@ -99,6 +110,19 @@ public class TransactionController {
 
         String result = chatClient.prompt().user(userMessage).call().content();
 
-        return ResponseEntity.ok(result);
+        assert result != null;
+        byte[] audio = textToSpeechModel.call(result);
+
+        Resource audioResource = new ByteArrayResource(audio);
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename("audio.mp3")
+                                .build()
+                                .toString()
+                ).body(audioResource);
+
     }
 }
